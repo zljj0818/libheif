@@ -1,0 +1,46 @@
+####
+config("libheif_config") {
+  include_dirs = [
+    ".",
+  ]
+}
+
+source_set("libheif") {
+  public_configs = [ ":libheif_config" ]
+
+  h265_lib = "libde265"
+
+  sources = [
+    "//third_party/libheif/libheif/bitstream.cc",
+    "//third_party/libheif/libheif/box.cc",
+    "//third_party/libheif/libheif/error.cc",
+    "//third_party/libheif/libheif/heif.cc",
+    "//third_party/libheif/libheif/heif_context.cc",
+    "//third_party/libheif/libheif/heif_file.cc",
+    "//third_party/libheif/libheif/heif_image.cc",
+    "//third_party/libheif/libheif/heif_hevc.cc",
+    "//third_party/libheif/libheif/heif_avif.cc",
+    "//third_party/libheif/libheif/heif_colorconversion.cc",
+    "//third_party/libheif/libheif/heif_plugin_registry.cc",
+    "//third_party/libheif/libheif/heif_plugin.cc",
+  ]
+
+  deps = [ "//third_party/libde265" ]
+
+  defines = [
+    "HAVE_UNISTD_H",
+    "HAVE_VISIBILITY",
+  ]
+
+  if (is_android) {
+    defines += [ "OS_ANDROID" ]
+  }
+
+  if (h265_lib == "libde265") {
+    defines += [ "HAVE_LIBDE265", ]
+    sources += [ "//third_party/libheif/libheif/heif_decoder_libde265.cc", ]
+  }
+
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [ "//build/config/compiler:no_chromium_code" ]
+}
