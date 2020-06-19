@@ -146,7 +146,8 @@ bool HeifPixelImage::add_plane(heif_channel channel, int width, int height, int 
   plane.stride = width * bytes_per_pixel;
   plane.stride = (plane.stride+alignment-1) & ~(alignment-1);
 
-  try {
+  //try {
+  {
     plane.allocated_mem = new uint8_t[height * plane.stride + alignment-1];
     plane.mem = plane.allocated_mem;
 
@@ -160,9 +161,9 @@ bool HeifPixelImage::add_plane(heif_channel channel, int width, int height, int 
 
     m_planes.insert(std::make_pair(channel, std::move(plane)));
   }
-  catch (const std::bad_alloc& excpt) {
-    return false;
-  }
+  //catch (const std::bad_alloc& excpt) {
+  //  return false;
+  //}
 
   return true;
 }

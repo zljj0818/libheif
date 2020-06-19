@@ -626,6 +626,7 @@ namespace heif {
   public:
     Box_hvcC() { set_short_type(fourcc("hvcC")); set_is_full_box(false); }
   Box_hvcC(const BoxHeader& hdr) : Box(hdr) { }
+  ~Box_hvcC() override;
 
     struct configuration {
       uint8_t  configuration_version;
@@ -654,7 +655,7 @@ namespace heif {
 
     std::string dump(Indent&) const override;
 
-    bool get_headers(std::vector<uint8_t>* dest) const;
+    bool get_headers(std::vector<uint8_t>* dest);
 
     void set_configuration(const configuration& config) { m_configuration=config; }
 
@@ -669,6 +670,8 @@ namespace heif {
     Error parse(BitstreamRange& range) override;
 
   private:
+    Box_hvcC& operator=(const Box_hvcC&)=delete;
+    Box_hvcC& operator=(Box_hvcC&&) = delete;
     struct NalArray {
       uint8_t m_array_completeness;
       uint8_t m_NAL_unit_type;
@@ -678,8 +681,9 @@ namespace heif {
 
     configuration m_configuration;
     uint8_t  m_length_size = 4; // default: 4 bytes for NAL unit lengths
-
-    std::vector<NalArray> m_nal_array;
+    std::vector<NalArray> m_nal_array0;
+    std::vector<NalArray> m_nal_array1;
+    int bottom = 111111111;
   };
 
 

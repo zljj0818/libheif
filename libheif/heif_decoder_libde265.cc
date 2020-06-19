@@ -285,7 +285,7 @@ static struct heif_error libde265_v1_push_data(void* decoder_raw, const void* da
   }
 
   // TODO(farindk): Set "err" if data could not be pushed
-  //de265_push_data(decoder->ctx, data, size, 0, nullptr);
+  // de265_push_data(decoder->ctx, data, size, 0, nullptr);
 
   struct heif_error err = { heif_error_Ok, heif_suberror_Unspecified, kSuccess };
   return err;

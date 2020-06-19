@@ -994,8 +994,8 @@ heif_color_profile_type heif_image_handle_get_color_profile_type(const struct he
 size_t heif_image_handle_get_raw_color_profile_size(const struct heif_image_handle* handle)
 {
   auto profile = handle->image->get_color_profile();
-  auto raw_profile = std::dynamic_pointer_cast<const color_profile_raw>(profile);
-  if (raw_profile) {
+  if (profile->get_type() != fourcc("nclx")) {
+    auto raw_profile = reinterpret_cast<const color_profile_raw*>(profile.get());
     return raw_profile->get_data().size();
   }
   else {
@@ -1070,7 +1070,9 @@ struct heif_error heif_image_handle_get_nclx_color_profile(const struct heif_ima
   }
 
   auto profile = handle->image->get_color_profile();
-  auto nclx_profile = std::dynamic_pointer_cast<const color_profile_nclx>(profile);
+  const color_profile_nclx* nclx_profile_ptr = profile->get_type() == fourcc("nclx") ?
+          reinterpret_cast<const color_profile_nclx*>(profile.get()) : nullptr;
+  std::shared_ptr<const color_profile_nclx> nclx_profile(nclx_profile_ptr);
   Error err = get_nclx_color_profile(nclx_profile, out_data);
 
   return err.error_struct(handle->image.get());
@@ -1087,8 +1089,8 @@ struct heif_error heif_image_handle_get_raw_color_profile(const struct heif_imag
   }
 
   auto profile = handle->image->get_color_profile();
-  auto raw_profile = std::dynamic_pointer_cast<const color_profile_raw>(profile);
-  if (raw_profile) {
+  if (profile->get_type() != fourcc("nclx")) {
+    auto raw_profile = reinterpret_cast<const color_profile_raw*>(profile.get());
     memcpy(out_data,
            raw_profile->get_data().data(),
            raw_profile->get_data().size());
@@ -1114,8 +1116,8 @@ enum heif_color_profile_type heif_image_get_color_profile_type(const struct heif
 size_t heif_image_get_raw_color_profile_size(const struct heif_image* image)
 {
   auto profile = image->image->get_color_profile();
-  auto raw_profile = std::dynamic_pointer_cast<const color_profile_raw>(profile);
-  if (raw_profile) {
+  if (profile->get_type() != fourcc("nclx")) {
+    auto raw_profile = reinterpret_cast<const color_profile_raw*>(profile.get());
     return raw_profile->get_data().size();
   }
   else {
@@ -1134,8 +1136,8 @@ struct heif_error heif_image_get_raw_color_profile(const struct heif_image* imag
   }
 
   auto profile = image->image->get_color_profile();
-  auto raw_profile = std::dynamic_pointer_cast<const color_profile_raw>(profile);
-  if (raw_profile) {
+  if (profile->get_type() != fourcc("nclx")) {
+    auto raw_profile = reinterpret_cast<const color_profile_raw*>(profile.get());
     memcpy(out_data,
            raw_profile->get_data().data(),
            raw_profile->get_data().size());
@@ -1155,7 +1157,9 @@ struct heif_error heif_image_get_nclx_color_profile(const struct heif_image* ima
   }
 
   auto profile = image->image->get_color_profile();
-  auto nclx_profile = std::dynamic_pointer_cast<const color_profile_nclx>(profile);
+  const color_profile_nclx* nclx_profile_ptr = profile->get_type() == fourcc("nclx") ?
+          reinterpret_cast<const color_profile_nclx*>(profile.get()) : nullptr;
+  std::shared_ptr<const color_profile_nclx> nclx_profile(nclx_profile_ptr);
   Error err = get_nclx_color_profile(nclx_profile, out_data);
 
   return err.error_struct(image->image.get());

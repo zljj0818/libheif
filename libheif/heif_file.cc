@@ -198,11 +198,13 @@ Error HeifFile::parse_heif_file(BitstreamRange& range)
     // extract relevant boxes (ftyp, meta)
 
     if (box->get_short_type() == fourcc("meta")) {
-      m_meta_box = std::dynamic_pointer_cast<Box_meta>(box);
+      // m_meta_box = std::dynamic_pointer_cast<Box_meta>(box);
+      m_meta_box = std::shared_ptr<Box_meta>(reinterpret_cast<Box_meta*>(box.get()));
     }
 
     if (box->get_short_type() == fourcc("ftyp")) {
-      m_ftyp_box = std::dynamic_pointer_cast<Box_ftyp>(box);
+      // m_ftyp_box = std::dynamic_pointer_cast<Box_ftyp>(box);
+      m_ftyp_box = std::shared_ptr<Box_ftyp>(reinterpret_cast<Box_ftyp*>(box.get()));
     }
   }
 
@@ -232,8 +234,11 @@ Error HeifFile::parse_heif_file(BitstreamRange& range)
                  heif_suberror_No_meta_box);
   }
 
-
-  m_hdlr_box = std::dynamic_pointer_cast<Box_hdlr>(m_meta_box->get_child_box(fourcc("hdlr")));
+  // m_hdlr_box = std::dynamic_pointer_cast<Box_hdlr>(m_meta_box->get_child_box(fourcc("hdlr")));
+  auto hdlr = m_meta_box->get_child_box(fourcc("hdlr"));
+  Box_hdlr* hdlr_ptr = hdlr && hdlr->get_short_type() == fourcc("hdlr") ?
+          reinterpret_cast<Box_hdlr*>(hdlr.get()) : nullptr;
+  m_hdlr_box = std::shared_ptr<Box_hdlr>(hdlr_ptr);
   if (!m_hdlr_box) {
     return Error(heif_error_Invalid_input,
                  heif_suberror_No_hdlr_box);
@@ -247,41 +252,73 @@ Error HeifFile::parse_heif_file(BitstreamRange& range)
 
   // --- find mandatory boxes needed for image decoding
 
-  m_pitm_box = std::dynamic_pointer_cast<Box_pitm>(m_meta_box->get_child_box(fourcc("pitm")));
+  // m_pitm_box = std::dynamic_pointer_cast<Box_pitm>(m_meta_box->get_child_box(fourcc("pitm")));
+  auto pitm = m_meta_box->get_child_box(fourcc("pitm"));
+  Box_pitm* pitm_ptr = pitm && pitm->get_short_type() == fourcc("pitm") ?
+          reinterpret_cast<Box_pitm*>(pitm.get()) : nullptr;
+  m_pitm_box = std::shared_ptr<Box_pitm>(pitm_ptr);
   if (!m_pitm_box) {
     return Error(heif_error_Invalid_input,
                  heif_suberror_No_pitm_box);
   }
 
-  m_iprp_box = std::dynamic_pointer_cast<Box_iprp>(m_meta_box->get_child_box(fourcc("iprp")));
+  // m_iprp_box = std::dynamic_pointer_cast<Box_iprp>(m_meta_box->get_child_box(fourcc("iprp")));
+  auto iprp = m_meta_box->get_child_box(fourcc("iprp"));
+  Box_iprp* iprp_ptr = iprp && iprp->get_short_type() == fourcc("iprp") ?
+          reinterpret_cast<Box_iprp*>(iprp.get()) : nullptr;
+  m_iprp_box = std::shared_ptr<Box_iprp>(iprp_ptr);
   if (!m_iprp_box) {
     return Error(heif_error_Invalid_input,
                  heif_suberror_No_iprp_box);
   }
 
-  m_ipco_box = std::dynamic_pointer_cast<Box_ipco>(m_iprp_box->get_child_box(fourcc("ipco")));
+  // m_ipco_box = std::dynamic_pointer_cast<Box_ipco>(m_iprp_box->get_child_box(fourcc("ipco")));
+  auto ipco = m_iprp_box->get_child_box(fourcc("ipco"));
+  Box_ipco* ipco_ptr = ipco && ipco->get_short_type() == fourcc("ipco") ?
+          reinterpret_cast<Box_ipco*>(ipco.get()) : nullptr;
+  m_ipco_box = std::shared_ptr<Box_ipco>(ipco_ptr);
   if (!m_ipco_box) {
     return Error(heif_error_Invalid_input,
                  heif_suberror_No_ipco_box);
   }
 
-  m_ipma_box = std::dynamic_pointer_cast<Box_ipma>(m_iprp_box->get_child_box(fourcc("ipma")));
+  // m_ipma_box = std::dynamic_pointer_cast<Box_ipma>(m_iprp_box->get_child_box(fourcc("ipma")));
+  auto ipma = m_iprp_box->get_child_box(fourcc("ipma"));
+  Box_ipma* ipma_ptr = ipma && ipma->get_short_type() == fourcc("ipma") ?
+          reinterpret_cast<Box_ipma*>(ipma.get()) : nullptr;
+  m_ipma_box = std::shared_ptr<Box_ipma>(ipma_ptr);
   if (!m_ipma_box) {
     return Error(heif_error_Invalid_input,
                  heif_suberror_No_ipma_box);
   }
 
-  m_iloc_box = std::dynamic_pointer_cast<Box_iloc>(m_meta_box->get_child_box(fourcc("iloc")));
+  // m_iloc_box = std::dynamic_pointer_cast<Box_iloc>(m_meta_box->get_child_box(fourcc("iloc")));
+  auto iloc = m_meta_box->get_child_box(fourcc("iloc"));
+  Box_iloc* iloc_ptr = iloc && iloc->get_short_type() == fourcc("iloc") ?
+          reinterpret_cast<Box_iloc*>(iloc.get()) : nullptr;
+  m_iloc_box = std::shared_ptr<Box_iloc>(iloc_ptr);
   if (!m_iloc_box) {
     return Error(heif_error_Invalid_input,
                  heif_suberror_No_iloc_box);
   }
 
-  m_idat_box = std::dynamic_pointer_cast<Box_idat>(m_meta_box->get_child_box(fourcc("idat")));
+  // m_idat_box = std::dynamic_pointer_cast<Box_idat>(m_meta_box->get_child_box(fourcc("idat")));
+  auto idat = m_meta_box->get_child_box(fourcc("idat"));
+  Box_idat* idat_ptr = idat && idat->get_short_type() == fourcc("idat") ?
+          reinterpret_cast<Box_idat*>(idat.get()) : nullptr;
+  m_idat_box = std::shared_ptr<Box_idat>(idat_ptr);
 
-  m_iref_box = std::dynamic_pointer_cast<Box_iref>(m_meta_box->get_child_box(fourcc("iref")));
+  // m_iref_box = std::dynamic_pointer_cast<Box_iref>(m_meta_box->get_child_box(fourcc("iref")));
+  auto iref = m_meta_box->get_child_box(fourcc("iref"));
+  Box_iref* iref_ptr = iref && iref->get_short_type() == fourcc("iref") ?
+          reinterpret_cast<Box_iref*>(iref.get()) : nullptr;
+  m_iref_box = std::shared_ptr<Box_iref>(iref_ptr);
 
-  m_iinf_box = std::dynamic_pointer_cast<Box_iinf>(m_meta_box->get_child_box(fourcc("iinf")));
+  // m_iinf_box = std::dynamic_pointer_cast<Box_iinf>(m_meta_box->get_child_box(fourcc("iinf")));
+  auto iinf = m_meta_box->get_child_box(fourcc("iinf"));
+  Box_iinf* iinf_ptr = iinf && iinf->get_short_type() == fourcc("iinf") ?
+          reinterpret_cast<Box_iinf*>(iinf.get()) : nullptr;
+  m_iinf_box = std::shared_ptr<Box_iinf>(iinf_ptr);
   if (!m_iinf_box) {
     return Error(heif_error_Invalid_input,
                  heif_suberror_No_iinf_box);
@@ -294,7 +331,11 @@ Error HeifFile::parse_heif_file(BitstreamRange& range)
   std::vector<std::shared_ptr<Box>> infe_boxes = m_iinf_box->get_child_boxes(fourcc("infe"));
 
   for (auto& box : infe_boxes) {
-    std::shared_ptr<Box_infe> infe_box = std::dynamic_pointer_cast<Box_infe>(box);
+    // std::shared_ptr<Box_infe> infe_box = std::dynamic_pointer_cast<Box_infe>(box);
+    Box_infe* infe_ptr = box->get_short_type() == fourcc("infe") ?
+            reinterpret_cast<Box_infe*>(box.get()) : nullptr;
+    std::shared_ptr<Box_infe> infe_box = std::shared_ptr<Box_infe>(infe_ptr);
+
     if (!infe_box) {
       return Error(heif_error_Invalid_input,
                    heif_suberror_No_infe_box);
@@ -369,7 +410,10 @@ heif_chroma HeifFile::get_image_chroma_from_configuration(heif_item_id imageID) 
   // HEVC
 
   auto box = m_ipco_box->get_property_for_item_ID(imageID, m_ipma_box, fourcc("hvcC"));
-  std::shared_ptr<Box_hvcC> hvcC_box = std::dynamic_pointer_cast<Box_hvcC>(box);
+  // std::shared_ptr<Box_hvcC> hvcC_box = std::dynamic_pointer_cast<Box_hvcC>(box);
+  Box_hvcC* hvcC_box = box && box->get_short_type() == fourcc("hvcC") ?
+          reinterpret_cast<Box_hvcC*>(box.get()) : nullptr;
+  // std::shared_ptr<Box_hvcC> hvcC_box = std::shared_ptr<Box_hvcC>(hvcC_ptr);
   if (hvcC_box) {
     return (heif_chroma)(hvcC_box->get_configuration().chroma_format);
   }
@@ -378,7 +422,10 @@ heif_chroma HeifFile::get_image_chroma_from_configuration(heif_item_id imageID) 
   // AV1
 
   box = m_ipco_box->get_property_for_item_ID(imageID, m_ipma_box, fourcc("av1C"));
-  std::shared_ptr<Box_av1C> av1C_box = std::dynamic_pointer_cast<Box_av1C>(box);
+  // std::shared_ptr<Box_av1C> av1C_box = std::dynamic_pointer_cast<Box_av1C>(box);
+  Box_av1C* av1C_ptr = box && box->get_short_type() == fourcc("av1C") ?
+          reinterpret_cast<Box_av1C*>(box.get()) : nullptr;
+  std::shared_ptr<Box_av1C> av1C_box = std::shared_ptr<Box_av1C>(av1C_ptr);
   if (av1C_box) {
     Box_av1C::configuration config = av1C_box->get_configuration();
     if (config.chroma_subsampling_x == 1 &&
@@ -409,7 +456,10 @@ int HeifFile::get_luma_bits_per_pixel_from_configuration(heif_item_id imageID) c
   // HEVC
 
   auto box = m_ipco_box->get_property_for_item_ID(imageID, m_ipma_box, fourcc("hvcC"));
-  std::shared_ptr<Box_hvcC> hvcC_box = std::dynamic_pointer_cast<Box_hvcC>(box);
+  // std::shared_ptr<Box_hvcC> hvcC_box = std::dynamic_pointer_cast<Box_hvcC>(box);
+  Box_hvcC* hvcC_box = box && box->get_short_type() == fourcc("hvcC") ?
+          reinterpret_cast<Box_hvcC*>(box.get()) : nullptr;
+  // std::shared_ptr<Box_hvcC> hvcC_box = std::shared_ptr<Box_hvcC>(hvcC_ptr);
   if (hvcC_box) {
     return hvcC_box->get_configuration().bit_depth_luma;
   }
@@ -417,7 +467,10 @@ int HeifFile::get_luma_bits_per_pixel_from_configuration(heif_item_id imageID) c
   // AV1
 
   box = m_ipco_box->get_property_for_item_ID(imageID, m_ipma_box, fourcc("av1C"));
-  std::shared_ptr<Box_av1C> av1C_box = std::dynamic_pointer_cast<Box_av1C>(box);
+  // std::shared_ptr<Box_av1C> av1C_box = std::dynamic_pointer_cast<Box_av1C>(box);
+  Box_av1C* av1C_ptr = box && box->get_short_type() == fourcc("av1C") ?
+          reinterpret_cast<Box_av1C*>(box.get()) : nullptr;
+  std::shared_ptr<Box_av1C> av1C_box = std::shared_ptr<Box_av1C>(av1C_ptr);
   if (av1C_box) {
     Box_av1C::configuration config = av1C_box->get_configuration();
     if (!config.high_bitdepth) {
@@ -441,7 +494,10 @@ int HeifFile::get_chroma_bits_per_pixel_from_configuration(heif_item_id imageID)
   // HEVC
 
   auto box = m_ipco_box->get_property_for_item_ID(imageID, m_ipma_box, fourcc("hvcC"));
-  std::shared_ptr<Box_hvcC> hvcC_box = std::dynamic_pointer_cast<Box_hvcC>(box);
+  // std::shared_ptr<Box_hvcC> hvcC_box = std::dynamic_pointer_cast<Box_hvcC>(box);
+  Box_hvcC* hvcC_box = box && box->get_short_type() == fourcc("hvcC") ?
+          reinterpret_cast<Box_hvcC*>(box.get()) : nullptr;
+  // std::shared_ptr<Box_hvcC> hvcC_box = std::shared_ptr<Box_hvcC>(hvcC_ptr);
   if (hvcC_box) {
     return hvcC_box->get_configuration().bit_depth_chroma;
   }
@@ -449,7 +505,10 @@ int HeifFile::get_chroma_bits_per_pixel_from_configuration(heif_item_id imageID)
   // AV1
 
   box = m_ipco_box->get_property_for_item_ID(imageID, m_ipma_box, fourcc("av1C"));
-  std::shared_ptr<Box_av1C> av1C_box = std::dynamic_pointer_cast<Box_av1C>(box);
+  // std::shared_ptr<Box_av1C> av1C_box = std::dynamic_pointer_cast<Box_av1C>(box);
+  Box_av1C* av1C_ptr = box && box->get_short_type() == fourcc("av1C") ?
+          reinterpret_cast<Box_av1C*>(box.get()) : nullptr;
+  std::shared_ptr<Box_av1C> av1C_box = std::shared_ptr<Box_av1C>(av1C_ptr);
   if (av1C_box) {
     Box_av1C::configuration config = av1C_box->get_configuration();
     if (!config.high_bitdepth) {
@@ -523,16 +582,22 @@ Error HeifFile::get_compressed_image_data(heif_item_id ID, std::vector<uint8_t>*
 
     // --- get codec configuration
 
-    std::shared_ptr<Box_hvcC> hvcC_box;
+    // std::shared_ptr<Box_hvcC> hvcC_box;
+    std::shared_ptr<Box> hvcC_box_wrapper;
     for (auto& prop : properties) {
       if (prop.property->get_short_type() == fourcc("hvcC")) {
-        hvcC_box = std::dynamic_pointer_cast<Box_hvcC>(prop.property);
-        if (hvcC_box) {
+        // hvcC_box = std::dynamic_pointer_cast<Box_hvcC>(prop.property);
+        // hvcC_box = std::shared_ptr<Box_hvcC>(
+        //                 reinterpret_cast<Box_hvcC*>(prop.property.get()));
+        hvcC_box_wrapper = prop.property;
+        if (hvcC_box_wrapper) {
           break;
         }
       }
     }
 
+    Box_hvcC* hvcC_box = hvcC_box_wrapper ?
+        reinterpret_cast<Box_hvcC*>(hvcC_box_wrapper.get()) : nullptr;
     if (!hvcC_box) {
       // Should always have an hvcC box, because we are checking this in
       // heif_context::interpret_heif_file()
@@ -561,7 +626,9 @@ Error HeifFile::get_compressed_image_data(heif_item_id ID, std::vector<uint8_t>*
     std::shared_ptr<Box_av1C> av1C_box;
     for (auto& prop : properties) {
       if (prop.property->get_short_type() == fourcc("av1C")) {
-        av1C_box = std::dynamic_pointer_cast<Box_av1C>(prop.property);
+        // av1C_box = std::dynamic_pointer_cast<Box_av1C>(prop.property);
+        av1C_box = std::shared_ptr<Box_av1C>(
+                        reinterpret_cast<Box_av1C*>(prop.property.get()));
         if (av1C_box) {
           break;
         }
@@ -665,9 +732,13 @@ void HeifFile::add_hvcC_property(heif_item_id id)
 
 Error HeifFile::append_hvcC_nal_data(heif_item_id id, const std::vector<uint8_t>& nal_data)
 {
-  auto hvcC = std::dynamic_pointer_cast<Box_hvcC>(m_ipco_box->get_property_for_item_ID(id,
-                                                                                       m_ipma_box,
-                                                                                       fourcc("hvcC")));
+  // auto hvcC = std::dynamic_pointer_cast<Box_hvcC>(m_ipco_box->get_property_for_item_ID(id,
+  //                                                                                     m_ipma_box,
+  //                                                                                     fourcc("hvcC")));
+  auto box = m_ipco_box->get_property_for_item_ID(id, m_ipma_box, fourcc("hvcC"));
+  Box_hvcC* hvcC = box && box->get_short_type() == fourcc("hvcC") ?
+          reinterpret_cast<Box_hvcC*>(box.get()) : nullptr;
+  // std::shared_ptr<Box_hvcC> hvcC = std::shared_ptr<Box_hvcC>(hvcC_ptr);
 
   if (hvcC) {
     hvcC->append_nal_data(nal_data);
@@ -685,9 +756,13 @@ Error HeifFile::append_hvcC_nal_data(heif_item_id id, const std::vector<uint8_t>
 
 Error HeifFile::set_hvcC_configuration(heif_item_id id, const Box_hvcC::configuration& config)
 {
-  auto hvcC = std::dynamic_pointer_cast<Box_hvcC>(m_ipco_box->get_property_for_item_ID(id,
-                                                                                       m_ipma_box,
-                                                                                       fourcc("hvcC")));
+  // auto hvcC = std::dynamic_pointer_cast<Box_hvcC>(m_ipco_box->get_property_for_item_ID(id,
+  //                                                                                      m_ipma_box,
+  //                                                                                      fourcc("hvcC")));
+  auto box = m_ipco_box->get_property_for_item_ID(id, m_ipma_box, fourcc("hvcC"));
+  Box_hvcC* hvcC = box && box->get_short_type() == fourcc("hvcC") ?
+          reinterpret_cast<Box_hvcC*>(box.get()) : nullptr;
+  // std::shared_ptr<Box_hvcC> hvcC = std::shared_ptr<Box_hvcC>(hvcC_ptr);
 
   if (hvcC) {
     hvcC->set_configuration(config);
@@ -705,9 +780,13 @@ Error HeifFile::append_hvcC_nal_data(heif_item_id id, const uint8_t* data, size_
 {
   std::vector<Box_ipco::Property> properties;
 
-  auto hvcC = std::dynamic_pointer_cast<Box_hvcC>(m_ipco_box->get_property_for_item_ID(id,
-                                                                                       m_ipma_box,
-                                                                                       fourcc("hvcC")));
+  // auto hvcC = std::dynamic_pointer_cast<Box_hvcC>(m_ipco_box->get_property_for_item_ID(id,
+  //                                                                                      m_ipma_box,
+  //                                                                                      fourcc("hvcC")));
+  auto box = m_ipco_box->get_property_for_item_ID(id, m_ipma_box, fourcc("hvcC"));
+  Box_hvcC* hvcC = box && box->get_short_type() == fourcc("hvcC") ?
+          reinterpret_cast<Box_hvcC*>(box.get()) : nullptr;
+  // std::shared_ptr<Box_hvcC> hvcC = std::shared_ptr<Box_hvcC>(hvcC_ptr);
 
   if (hvcC) {
     hvcC->append_nal_data(data,size);
@@ -731,9 +810,13 @@ void HeifFile::add_av1C_property(heif_item_id id)
 
 Error HeifFile::set_av1C_configuration(heif_item_id id, const Box_av1C::configuration& config)
 {
-  auto av1C = std::dynamic_pointer_cast<Box_av1C>(m_ipco_box->get_property_for_item_ID(id,
-                                                                                       m_ipma_box,
-                                                                                       fourcc("av1C")));
+  // auto av1C = std::dynamic_pointer_cast<Box_av1C>(m_ipco_box->get_property_for_item_ID(id,
+  //                                                                                      m_ipma_box,
+  //                                                                                      fourcc("av1C")));
+  auto box = m_ipco_box->get_property_for_item_ID(id, m_ipma_box, fourcc("av1C"));
+  Box_av1C* av1C_ptr = box && box->get_short_type() == fourcc("av1C") ?
+          reinterpret_cast<Box_av1C*>(box.get()) : nullptr;
+  std::shared_ptr<Box_av1C> av1C = std::shared_ptr<Box_av1C>(av1C_ptr);
 
   if (av1C) {
     av1C->set_configuration(config);

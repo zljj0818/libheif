@@ -32,12 +32,32 @@
 #include <string.h>
 #include <assert.h>
 
+#include <dlfcn.h>
 
 using namespace heif;
 
 
 heif::Error heif::Error::Ok(heif_error_Ok);
 
+
+static void printlog(const char* fmt, ...) {
+  va_list ap;
+  char buf[512];
+
+  va_start(ap, fmt);
+  vsnprintf(buf, 512, fmt, ap);
+  va_end(ap);
+
+#if defined(OS_ANDROID)
+  typedef int (*android_log_write_func)(int prio, const char* tag, const char* msg);
+  static android_log_write_func func = (android_log_write_func)dlsym(nullptr, "__android_log_write");
+  if (func) {
+    func(4, "heic", buf);
+  }
+#else
+  puts(buf);
+#endif
+}
 
 
 Fraction::Fraction(int32_t num,int32_t den)
@@ -2484,7 +2504,7 @@ Error Box_hvcC::parse(BitstreamRange& range)
         array.m_nal_units.push_back( std::move(nal_unit) );
       }
 
-      m_nal_array.push_back( std::move(array) );
+      m_nal_array1.push_back( std::move(array) );
     }
 
   range.skip_to_end_of_box();
@@ -2537,7 +2557,7 @@ std::string Box_hvcC::dump(Indent& indent) const
        << indent << "temporal_id_nested: " << ((int)c.temporal_id_nested) << "\n"
        << indent << "length_size: " << ((int)m_length_size) << "\n";
 
-  for (const auto& array : m_nal_array) {
+  for (const auto& array : m_nal_array1) {
     sstr << indent << "<array>\n";
 
     indent++;
@@ -2560,12 +2580,16 @@ std::string Box_hvcC::dump(Indent& indent) const
   return sstr.str();
 }
 
+Box_hvcC::~Box_hvcC() {
+  printlog("Box_hvcC::~Box_hvcC, %p, size: %d, %d", this, m_nal_array1.size(), bottom);
+}
 
-bool Box_hvcC::get_headers(std::vector<uint8_t>* dest) const
+bool Box_hvcC::get_headers(std::vector<uint8_t>* dest)
 {
-  for (const auto& array : m_nal_array) {
+  printlog("Box_hvcC::get_headers, %p, m_nal_array1: %lu, %d", this, m_nal_array1.size(), bottom++);
+  for (const auto& array : m_nal_array1) {
+    printlog("Box_hvcC::get_headers, %p, m_nal_units: %lu", this, array.m_nal_units.size());
     for (const auto& unit : array.m_nal_units) {
-
       dest->push_back( (unit.size()>>24) & 0xFF );
       dest->push_back( (unit.size()>>16) & 0xFF );
       dest->push_back( (unit.size()>> 8) & 0xFF );
@@ -2580,6 +2604,8 @@ bool Box_hvcC::get_headers(std::vector<uint8_t>* dest) const
       dest->insert(dest->end(), unit.begin(), unit.end());
     }
   }
+  printlog("Box_hvcC::get_headers, %p, dest: %lu, size: %lu, %p, %d",
+        this, dest->size(), m_nal_array1.size(), &m_nal_array1, bottom);
 
   return true;
 }
@@ -2592,7 +2618,7 @@ void Box_hvcC::append_nal_data(const std::vector<uint8_t>& nal)
   array.m_NAL_unit_type = uint8_t(nal[0]>>1);
   array.m_nal_units.push_back(nal);
 
-  m_nal_array.push_back(array);
+  m_nal_array1.push_back(array);
 }
 
 void Box_hvcC::append_nal_data(const uint8_t* data, size_t size)
@@ -2606,7 +2632,7 @@ void Box_hvcC::append_nal_data(const uint8_t* data, size_t size)
   array.m_NAL_unit_type = uint8_t(nal[0]>>1);
   array.m_nal_units.push_back( std::move(nal) );
 
-  m_nal_array.push_back(array);
+  m_nal_array1.push_back(array);
 }
 
 
@@ -2652,14 +2678,14 @@ Error Box_hvcC::write(StreamWriter& writer) const
                           ((c.temporal_id_nested & 1) << 2) |
                           ((m_length_size-1) & 0x03)));
 
-  size_t nArrays = m_nal_array.size();
+  size_t nArrays = m_nal_array1.size();
   if (nArrays>0xFF) {
     // TODO: error: too many NAL units
   }
 
   writer.write8((uint8_t)nArrays);
 
-  for (const NalArray& array : m_nal_array) {
+  for (const NalArray& array : m_nal_array1) {
 
     writer.write8((uint8_t)(((array.m_array_completeness & 1) << 6) |
                             (array.m_NAL_unit_type & 0x3F)));
